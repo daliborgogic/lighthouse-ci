@@ -15,20 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+'use strict'
 
-const fetch = require('node-fetch'); // polyfill
-const minimist = require('minimist');
+const fetch = require('node-fetch') // polyfill
+const minimist = require('minimist')
 
-const CI_HOST = process.env.CI_HOST || 'https://lighthouse-ci.appspot.com';
-const API_KEY = process.env.LIGHTHOUSE_API_KEY || process.env.API_KEY;
+const {
+  CI_HOST = 'https://lighthouse-ci.appspot.com',
+  LIGHTHOUSE_API_KEY,
+  CIRCLE_PR_NUM,
+  CIRCLE_SHA1,
+  CIRCLE_REPOSITORY_URL
+} = process.env
+
 const RUNNERS = {chrome: 'chrome', wpt: 'wpt'};
 
-if (process.env.API_KEY) {
-  console.log('Warning: The environment variable API_KEY is deprecated. Please use LIGHTHOUSE_API_KEY instead.');
-}
-
-function printUsageAndExit() {
+function printUsageAndExit () {
   const usage = `Usage:
 runLighthouse.js [--score=<score>] [--no-comment] [--runner=${Object.keys(RUNNERS)}] <url>
 
@@ -53,8 +55,8 @@ Examples:
   Runs Lighthouse on WebPageTest. Fails the PR if the score drops below 93.
     runLighthouse.js --score=93 --runner=wpt --no-comment https://example.com`;
 
-  console.log(usage);
-  process.exit(1);
+  console.log(usage)
+  process.exit(1)
 }
 
 /**
@@ -62,52 +64,54 @@ Examples:
  * @return {!Object} Settings object.
  */
 function getConfig() {
-  const args = process.argv.slice(2);
+  const args = process.argv.slice(2)
   const argv = minimist(args, {
     boolean: ['comment', 'help'],
-    default: {comment: true},
-    alias: {help: 'h'}
-  });
-  const config = {};
+    default: { comment: true },
+    alias: { help: 'h' }
+  })
+  const config = {}
 
   if (argv.help) {
-    printUsageAndExit();
+    printUsageAndExit()
   }
 
-  config.testUrl = argv._[0];
+  config.testUrl = argv._[0]
+
   if (!config.testUrl) {
-    console.log('Please provide a url to test.');
-    printUsageAndExit();
+    console.log('Please provide a url to test.')
+    printUsageAndExit()
   }
 
-  config.addComment = argv.comment;
-  config.minPassScore = Number(argv.score);
+  config.addComment = argv.comment
+  config.minPassScore = Number(argv.score)
+
   if (!config.addComment && !config.minPassScore) {
-    console.log('Please provide a --score when using --no-comment.');
-    printUsageAndExit();
+    console.log('Please provide a --score when using --no-comment.')
+    printUsageAndExit()
   }
 
-  config.runner = argv.runner || RUNNERS.chrome;
-  const possibleRunners = Object.keys(RUNNERS);
+  config.runner = argv.runner || RUNNERS.chrome
+  const possibleRunners = Object.keys(RUNNERS)
+
   if (!possibleRunners.includes(config.runner)) {
-    console.log(
-        `Unknown runner "${config.runner}". Options: ${possibleRunners}`);
-    printUsageAndExit();
+    console.log(`Unknown runner "${config.runner}". Options: ${possibleRunners}`)
+    printUsageAndExit()
   }
   console.log(`Using runner: ${config.runner}`);
 
   config.pr = {
-    number: parseInt(process.env.CIRCLE_PULL_REQUEST, 10),
-    sha: process.env.CIRCLE_SHA1
+    number: parseInt(CIRCLE_SHA1, 10),
+    sha: PULL_SHA
   };
 
-  const repoSlug = process.env.CIRCLE_REPOSITORY_URL;
+  const repoSlug = CIRCLE_REPOSITORY_URL
   config.repo = {
     owner: repoSlug.split('/')[0],
     name: repoSlug.split('/')[1]
   };
 
-  return config;
+  return config
 }
 
 /**
@@ -119,12 +123,12 @@ function run(config) {
 
   switch (config.runner) {
     case RUNNERS.wpt:
-      endpoint = `${CI_HOST}/run_on_wpt`;
+      endpoint = `${CI_HOST}/run_on_wpt`
       break;
     case RUNNERS.chrome: // same as default
     default:
-      endpoint = `${CI_HOST}/run_on_chrome`;
-      body = JSON.stringify(Object.assign({output: 'json'}, config));
+      endpoint = `${CI_HOST}/run_on_chrome`
+      body = JSON.stringify(Object.assign({output: 'json'}, config))
   }
 
   fetch(endpoint, {method: 'POST', body, headers: {
@@ -134,22 +138,21 @@ function run(config) {
   .then(resp => resp.json())
   .then(json => {
     if (config.runner === RUNNERS.wpt) {
-      console.log(
-          `Started Lighthouse run on WebPageTest: ${json.data.target_url}`);
-      return;
+      console.log(`Started Lighthouse run on WebPageTest: ${json.data.target_url}`)
+      return
     }
-    console.log('Lighthouse CI score:', json.score);
+    console.log('Lighthouse CI score:', json.score)
   })
   .catch(err => {
-    console.log('Lighthouse CI failed', err);
-    process.exit(1);
-  });
+    console.log('Lighthouse CI failed', err)
+    process.exit(1)
+  })
 }
 
 // Run LH if this is a PR.
-const config = getConfig();
-//if (process.env.TRAVIS_EVENT_TYPE === 'pull_request') {
-  run(config);
-//} else {
-//   console.log('Lighthouse is not run for non-PR commits.');
+const config = getConfig()
+// if (process.env.CIRCLE_BRANCH !== 'master') {
+  run(config)
+// } else {
+//  console.log('Lighthouse is not run for non-PR commits.')
 // }
