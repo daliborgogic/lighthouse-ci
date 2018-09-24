@@ -17,8 +17,10 @@
  */
 'use strict';
 
+const { spawnSync } = require('child_process');
 const fetch = require('node-fetch'); // polyfill
 const minimist = require('minimist');
+const parseGitConfig = require('parse-git-config');
 
 const CI_HOST = process.env.CI_HOST || 'https://lighthouse-ci.appspot.com';
 const API_KEY = process.env.LIGHTHOUSE_API_KEY || process.env.API_KEY;
@@ -55,6 +57,63 @@ Examples:
 
   console.log(usage);
   process.exit(1);
+}
+
+function getPrInfoFromApi() {
+  return Promise.resolve()
+    .then(() => {
+      const { stderr, stdout } = spawnSync('git', ['name-rev', process.env.TRAVIS_COMMIT, '--name-only']);
+      const error = stderr.toString();
+
+      if (error) {
+        throw Error('Couldn\'t read git branch name: ' + error);
+      }
+
+      return {
+        branch: stdout.toString(),
+        owner: getRepoSlugFromFile().split('/').shift(),
+        slug: getRepoSlugFromFile(),
+      };
+    })
+    .catch(error => {
+      console.error('Lighthouse failed: Couldn\'t read git config from file.');
+
+      throw error;
+    })
+    .then(({ branch, slug, owner }) =>
+      fetch(`https://api.github.com/repos/${slug}/pulls?state=open&head=${owner}:${branch}`)
+        .then(resp => resp.json())
+        .then(pulls => {
+          if (pulls.length === 0 || pulls.message) {
+            throw Error(`Couldn't find any matching PR for ${branch} at ${slug}.`);
+          }
+
+          const pull = pulls.pop();
+
+          return {
+            number: pull.number,
+            sha: pull.head.sha,
+          };
+        }));
+}
+
+function getRepoSlugFromFile() {
+  const { url } = parseGitConfig.sync()['remote "origin"'];
+
+  if (url.indexOf('http') === 0) {
+    const parts = url.split('://').pop().split('/');
+
+    return parts.slice(parts.length - 2).join('/').slice(0, -4);
+  }
+
+  return url.slice(url.lastIndexOf(':') + 1).slice(0, -4);
+}
+
+function getRepoInfoFromSlug(slug) {
+  return {
+    owner: slug.split('/')[0],
+    name: slug.split('/')[1]
+  };
 }
 
 /**
@@ -96,18 +155,27 @@ function getConfig() {
   }
   console.log(`Using runner: ${config.runner}`);
 
-  config.pr = {
-    number: parseInt(process.env.TRAVIS_PULL_REQUEST, 10),
-    sha: process.env.TRAVIS_PULL_REQUEST_SHA
-  };
+  if (process.env.TRAVIS_PULL_REQUEST) {
+    console.log('This is a PR, reading config from Travis env variables.');
 
-  const repoSlug = process.env.TRAVIS_PULL_REQUEST_SLUG;
-  config.repo = {
-    owner: repoSlug.split('/')[0],
-    name: repoSlug.split('/')[1]
-  };
+    return Promise.resolve({
+      ...config,
+      pr: {
+        number: parseInt(process.env.TRAVIS_PULL_REQUEST, 10),
+        sha: process.env.TRAVIS_PULL_REQUEST_SHA,
+      },
+      repo: getRepoInfoFromSlug(process.env.TRAVIS_PULL_REQUEST_SLUG),
+    });
+  } else {
+    console.log('Reading config from current git repository.');
 
-  return config;
+    return getPrInfoFromApi()
+      .then(pr => ({
+        ...config,
+        pr,
+        repo: getRepoInfoFromSlug(getRepoSlugFromFile()),
+      }));
+  }
 }
 
 /**
@@ -146,10 +214,10 @@ function run(config) {
   });
 }
 
-// Run LH if this is a PR.
-const config = getConfig();
-if (process.env.TRAVIS_EVENT_TYPE === 'pull_request') {
-  run(config);
-} else {
-  console.log('Lighthouse is not run for non-PR commits.');
-}
+getConfig()
+  .catch(error => {
+    console.error('Lightouse CI failed: Couldn\'t find any valid config.');
+    console.error(error);
+    process.exit(0);
+  })
+  .then(c => run(c));
