@@ -106,10 +106,13 @@ function getConfig() {
   };
 
   const repoSlug = CIRCLE_REPOSITORY_URL
+  const getUser = repoSlug.split(':')[1]
+  const getRepo = getUser.split('/')[1]
+
   config.repo = {
-    owner: repoSlug.split('/')[0],
-    name: repoSlug.split('/')[1]
-  };
+    owner: getUser.split('/')[0],
+    name: getRepo.split('.')[0]
+  }
 
   return config
 }
@@ -118,8 +121,8 @@ function getConfig() {
  * @param {!Object} config Settings to run the Lighthouse CI.
  */
 function run(config) {
-  let endpoint;
-  let body = JSON.stringify(config);
+  let endpoint
+  let body = JSON.stringify(config)
 
   switch (config.runner) {
     case RUNNERS.wpt:
@@ -151,8 +154,8 @@ function run(config) {
 
 // Run LH if this is a PR.
 const config = getConfig()
-// if (process.env.CIRCLE_BRANCH !== 'master') {
+if (process.env.CIRCLE_PR_NUMBER) {
   run(config)
-// } else {
-//  console.log('Lighthouse is not run for non-PR commits.')
-// }
+} else {
+ console.log('Lighthouse is not run for non-PR commits.')
+}

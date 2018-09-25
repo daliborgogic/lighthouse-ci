@@ -53,12 +53,10 @@ Next, in CircleCI `.config.yml` call [`npm run lh`][runlighthouse-link] as the l
 
 ```yml
 - run:
-    name: Build Success
+    name: Lighthouse
     when: on_success
     command: |
-      if [ "$CIRCLE_NODE_INDEX" == 0 ]; then
-        npm run lh -- https://staging.example.com
-      fi
+      npm run lh -- https://staging.example.com
 ```
 
 When Lighthouse is done auditing the URL, the CI will post a comment to the pull
@@ -75,7 +73,7 @@ a specified value. Just include the `--score` flag:
 
 ```yml
 - run:
-    name: Build Success
+    name: Lighthouse
     when: on_success
     command: |
       npm run lh -- --score=96 https://staging.example.com
@@ -167,7 +165,7 @@ X-API-KEY: <YOUR_LIGHTHOUSE_API_KEY>
 
 Relevant source:
 
-- [`frontend/server.js`](https://github.com/ebidel/lighthouse-ci/blob/master/frontend/server.js) - server which accepts Github pull requests and updates the status of your PR.
+- [`frontend/server.js`][frontend-server] - server which accepts Github pull requests and updates the status of your PR.
 
 ### CI backend (builder)
 > Server that runs Lighthouse against a URL, using Chrome.
@@ -193,7 +191,7 @@ Want to setup your own Lighthouse instance in a Docker container?
 
 The good news is Docker does most of the work for us! The bulk of getting started is in [Development](#development). That will take you through initial setup and show how to run the CI frontend.
 
-For the backend, see [builder/README.md](https://github.com/ebidel/lighthouse-ci/blob/master/builder/README.md) for building and running the Docker container.
+For the backend, see [builder/README.md][readme] for building and running the Docker container.
 
 Other changes, to the "Development" section:
 
@@ -258,4 +256,6 @@ repo. The CI endpoint could pull a `.lighthouse_ci` file that includes meta
 data `{minLighthouseScore: 96, testUrl: 'https://staging.example.com'}`. However,
 this requires work from the developer.
 
+[readme]: https://github.com/daliborgogic/lighthouse-ci/blob/master/builder/README.md
+[frontend-sever]: https://github.com/daliborgogic/lighthouse-ci/blob/master/frontend/server.js
 [runlighthouse-link]: https://github.com/daliborgogic/lighthouse-ci/blob/master/runlighthouse.js
