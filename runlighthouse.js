@@ -101,8 +101,8 @@ function getConfig() {
   console.log(`Using runner: ${config.runner}`);
 
   config.pr = {
-    number: parseInt(CIRCLE_SHA1, 10),
-    sha: PULL_SHA
+    number: parseInt(CIRCLE_PR_NUM, 10),
+    sha: CIRCLE_SHA1
   };
 
   const repoSlug = CIRCLE_REPOSITORY_URL
@@ -136,7 +136,7 @@ function run(config) {
 
   fetch(endpoint, {method: 'POST', body, headers: {
     'Content-Type': 'application/json',
-    'X-API-KEY': API_KEY
+    'X-API-KEY': LIGHTHOUSE_API_KEY
   }})
   .then(resp => resp.json())
   .then(json => {
