@@ -1,6 +1,6 @@
 {
   "name": "lighthouse-ci",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Eric Bidelman <ebidel@>",
   "license": "Apache-2.0",
   "description": "Lighthouse CI Runner",
@@ -10,12 +10,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ebidel/lighthouse-ci.git"
+    "url": "git+https://github.com/daliborgogic/lighthouse-ci.git"
   },
   "bugs": {
-    "url": "https://github.com/ebidel/lighthouse-ci/issues"
+    "url": "https://github.com/daliborgogic/lighthouse-ci/issues"
   },
-  "homepage": "https://github.com/ebidel/lighthouse-ci#readme",
+  "homepage": "https://github.com/daliborgogic/lighthouse-ci#readme",
   "dependencies": {
     "minimist": "^1.2.0",
     "node-fetch": "^2.2.0"
