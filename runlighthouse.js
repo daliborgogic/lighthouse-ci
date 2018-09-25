@@ -23,8 +23,8 @@ const minimist = require('minimist')
 const {
   CI_HOST = 'https://lighthouse-ci.appspot.com',
   LIGHTHOUSE_API_KEY,
-  CIRCLE_PULL_REQUEST,
   CIRCLE_SHA1,
+  CIRCLE_PULL_REQUEST,
   CIRCLE_REPOSITORY_URL
 } = process.env
 
