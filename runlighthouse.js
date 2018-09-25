@@ -106,12 +106,11 @@ function getConfig() {
   };
 
   const repoSlug = CIRCLE_REPOSITORY_URL
-  const getUser = repoSlug.split(':')[1]
-  const getRepo = getUser.split('/')[1]
+  const protocol = repoSlug.split('//')[1]
 
   config.repo = {
-    owner: getUser.split('/')[0],
-    name: getRepo.split('.')[0]
+    owner: protocol.split('/')[1],
+    name: protocol.split('/')[2]
   }
 
   return config
