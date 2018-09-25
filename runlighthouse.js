@@ -154,8 +154,8 @@ function run(config) {
 
 // Run LH if this is a PR.
 const config = getConfig()
-if (process.env.CIRCLE_PR_NUMBER) {
-  run(config)
-} else {
- console.log('Lighthouse is not run for non-PR commits.')
-}
+// if (process.env.CIRCLE_PR_NUMBER) {
+run(config)
+// } else {
+//  console.log('Lighthouse is not run for non-PR commits.')
+// }
