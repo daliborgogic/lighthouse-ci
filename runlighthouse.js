@@ -23,7 +23,7 @@ const minimist = require('minimist')
 const {
   CI_HOST = 'https://lighthouse-ci.appspot.com',
   LIGHTHOUSE_API_KEY,
-  CIRCLE_PR_NUM,
+  CIRCLE_PULL_REQUEST,
   CIRCLE_SHA1,
   CIRCLE_REPOSITORY_URL
 } = process.env
@@ -101,7 +101,7 @@ function getConfig() {
   console.log(`Using runner: ${config.runner}`);
 
   config.pr = {
-    number: parseInt(CIRCLE_PR_NUM, 10),
+    number: CIRCLE_PULL_REQUEST.slice(-2),
     sha: CIRCLE_SHA1
   };
 
