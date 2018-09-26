@@ -29,7 +29,10 @@ const {
 } = process.env
 
 const RUNNERS = {chrome: 'chrome', wpt: 'wpt'}
-const PR_NUMBER = CIRCLE_PULL_REQUEST.slice(-2)
+
+// Get PR number from CIRCLE_PULL_REQUEST
+// CIRCLE_PR_NUMBER only available for forked builds, doh!
+const prNumber = CIRCLE_PULL_REQUEST.slice(-2)
 
 function printUsageAndExit () {
   const usage = `Usage:
@@ -102,7 +105,7 @@ function getConfig() {
   console.log(`Using runner: ${config.runner}`);
 
   config.pr = {
-    number: PR_NUMBER,
+    number: prNumber,
     sha: CIRCLE_SHA1
   };
 
@@ -154,7 +157,7 @@ function run(config) {
 // Run LH if this is a PR.
 const config = getConfig()
 
-if (!isNaN(parseFloat(PR)) && isFinite(PR)) {
+if (!isNaN(parseFloat(prNumber)) && isFinite(prNumber)) {
   run(config)
 } else {
  console.log('Lighthouse is not run for non-PR commits.')
