@@ -17,7 +17,7 @@
  */
 'use strict'
 
-const fetch = require('node-fetch') // polyfill
+const fetch = require('node-fetch')
 const minimist = require('minimist')
 
 const {
@@ -28,7 +28,8 @@ const {
   CIRCLE_REPOSITORY_URL
 } = process.env
 
-const RUNNERS = {chrome: 'chrome', wpt: 'wpt'};
+const RUNNERS = {chrome: 'chrome', wpt: 'wpt'}
+const PR_NUMBER = CIRCLE_PULL_REQUEST.slice(-2)
 
 function printUsageAndExit () {
   const usage = `Usage:
@@ -101,16 +102,15 @@ function getConfig() {
   console.log(`Using runner: ${config.runner}`);
 
   config.pr = {
-    number: CIRCLE_PULL_REQUEST.slice(-2),
+    number: PR_NUMBER,
     sha: CIRCLE_SHA1
   };
 
-  const repoSlug = CIRCLE_REPOSITORY_URL
-  const protocol = repoSlug.split(':')[1]
+  const pullRequest = CIRCLE_REPOSITORY_URL.split(':')[1]
 
   config.repo = {
-    owner: protocol.split('/')[0],
-    name: protocol.split('/')[1].split('.')[0]
+    owner: pullRequest.split('/')[0],
+    name: pullRequest.split('/')[1].split('.')[0]
   }
 
   return config
@@ -153,8 +153,9 @@ function run(config) {
 
 // Run LH if this is a PR.
 const config = getConfig()
-// if (process.env.CIRCLE_PR_NUMBER) {
-run(config)
-// } else {
-//  console.log('Lighthouse is not run for non-PR commits.')
-// }
+
+if (!isNaN(parseFloat(PR)) && isFinite(PR)) {
+  run(config)
+} else {
+ console.log('Lighthouse is not run for non-PR commits.')
+}
